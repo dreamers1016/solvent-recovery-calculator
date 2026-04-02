@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans,system-ui,sans-serif);font-size:14px;color:var(--color-text-primary,#1a1a1a);background:transparent;line-height:1.5}
+.section{margin-bottom:1.5rem}
+.section-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-secondary,#666);margin-bottom:.75rem;padding-bottom:.4rem;border-bottom:.5px solid var(--color-border-tertiary,rgba(0,0,0,.12))}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.metric-card{background:var(--color-background-secondary,#f5f5f5);border-radius:8px;padding:.75rem 1rem}
+.metric-label{font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:4px}
+.metric-value{font-size:18px;font-weight:500}
+.metric-value.green{color:#3B6D11}
+.metric-value.amber{color:#854F0B}
+.metric-value.red{color:#A32D2D}
+label{font-size:12px;color:var(--color-text-secondary,#666);display:block;margin-bottom:4px}
+input[type=range]{width:100%;margin:4px 0}
+select,input[type=number],input[type=text]{width:100%;padding:6px 8px;border:.5px solid var(--color-border-tertiary,rgba(0,0,0,.2));border-radius:8px;font-size:13px;background:var(--color-background-primary,#fff);color:var(--color-text-primary,#1a1a1a)}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px}
+.badge.green{background:#EAF3DE;color:#3B6D11}
+.badge.amber{background:#FAEEDA;color:#854F0B}
+.badge.red{background:#FCEBEB;color:#A32D2D}
+.equip-card{border:.5px solid var(--color-border-tertiary,rgba(0,0,0,.12));border-radius:12px;padding:1rem;cursor:pointer;transition:border .15s;background:var(--color-background-primary,#fff)}
+.equip-card:hover{border-color:rgba(0,0,0,.3)}
+.equip-card.active{border:2px solid #185FA5}
+.equip-name{font-size:14px;font-weight:500;margin-bottom:6px}
+.equip-stat{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+.equip-stat span:first-child{color:var(--color-text-secondary,#666)}
+.payback-big{font-size:20px;font-weight:500;margin-top:8px}
+.cf-table{width:100%;border-collapse:collapse;font-size:11px}
+.cf-table th{background:var(--color-background-secondary,#f5f5f5);padding:5px 6px;text-align:right;font-weight:500;color:var(--color-text-secondary,#666);border-bottom:.5px solid var(--color-border-tertiary,rgba(0,0,0,.12));white-space:nowrap}
+.cf-table th:first-child{text-align:left}
+.cf-table td{padding:4px 6px;text-align:right;border-bottom:.5px solid var(--color-border-tertiary,rgba(0,0,0,.06));font-size:11px}
+.cf-table td:first-child{text-align:left;font-weight:500}
+.cf-table tr.positive td.cum{color:#3B6D11}
+.cf-table tr.negative td.cum{color:#A32D2D}
+.cf-table tr.payback-row td{background:rgba(24,95,165,.07)}
+.cf-table tr.buildup td{background:rgba(0,0,0,.02);color:var(--color-text-secondary,#666)}
+.currency-btn{padding:4px 10px;border:.5px solid var(--color-border-tertiary,rgba(0,0,0,.2));border-radius:6px;background:transparent;font-size:12px;cursor:pointer;color:var(--color-text-primary,#1a1a1a)}
+.currency-btn.active{background:#185FA5;color:#fff;border-color:#185FA5}
+.whatif-btn{padding:5px 12px;border:.5px solid var(--color-border-tertiary,rgba(0,0,0,.2));border-radius:8px;background:var(--color-background-secondary,#f5f5f5);font-size:12px;cursor:pointer;color:var(--color-text-primary,#1a1a1a)}
+.whatif-btn:hover{background:var(--color-background-tertiary,#ebebeb)}
+.preset-btn{padding:5px 12px;border:.5px solid var(--color-border-tertiary,rgba(0,0,0,.2));border-radius:6px;background:transparent;font-size:12px;cursor:pointer;color:var(--color-text-primary,#1a1a1a)}
+.preset-btn:hover{background:var(--color-background-secondary,#f5f5f5)}
+.disclaimer{font-size:11px;color:var(--color-text-tertiary,#999);margin-top:.5rem;padding:.5rem .75rem;border-left:2px solid var(--color-border-secondary,rgba(0,0,0,.2));background:var(--color-background-secondary,#f5f5f5);border-radius:0 6px 6px 0}
+.chart-wrap{position:relative;width:100%;height:360px}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;flex-wrap:wrap;gap:6px}
+.section-header .section-title{margin-bottom:0;border-bottom:none}
+.input-group{margin-bottom:.75rem}
+.sub-label{font-size:11px;color:var(--color-text-tertiary,#aaa);margin-bottom:2px}
+.cost-section{background:var(--color-background-secondary,#f5f5f5);border-radius:8px;padding:.75rem;margin-bottom:.75rem}
+.cost-section-title{font-size:11px;font-weight:500;color:var(--color-text-secondary,#666);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.04em}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:.5rem}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-swatch{width:24px;height:3px;border-radius:2px;display:inline-block}
+.legend-swatch.dashed{background:repeating-linear-gradient(90deg,currentColor 0,currentColor 4px,transparent 4px,transparent 8px)}
+@media(max-width:640px){.grid3,.grid4,.grid5{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body style="padding:1rem 0">
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem">
+  <div>
+    <div style="font-size:18px;font-weight:500">Solvent Recovery ROI Calculator</div>
+    <div style="font-size:12px;color:var(--color-text-secondary,#666)">20-year operating horizon · Plant build-up from Year −3</div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    <button class="currency-btn active" onclick="setCurrency('USD','$',1,this)">USD</button>
+    <button class="currency-btn" onclick="setCurrency('EUR','€',0.92,this)">EUR</button>
+    <button class="currency-btn" onclick="setCurrency('GBP','£',0.79,this)">GBP</button>
+    <button class="currency-btn" onclick="setCurrency('MYR','RM',4.72,this)">MYR</button>
+  </div>
+</div>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+  <span style="font-size:12px;color:var(--color-text-secondary,#666)">Presets:</span>
+  <button class="preset-btn" onclick="applyPreset(500)">Small (500 L/yr)</button>
+  <button class="preset-btn" onclick="applyPreset(2000)">Medium (2,000 L/yr)</button>
+  <button class="preset-btn" onclick="applyPreset(5000)">Large (5,000+ L/yr)</button>
+</div>
+
+<div class="section">
+  <div class="section-title">Solvent & usage parameters</div>
+  <div class="grid2" style="gap:16px">
+    <div>
+      <div class="input-group">
+        <label>Solvent</label>
+        <select id="solventSelect" onchange="updateSolvent()">
+          <option value="acetone">Acetone</option>
+          <option value="ethanol">Ethanol</option>
+          <option value="toluene">Toluene</option>
+          <option value="methanol">Methanol</option>
+          <option value="dcm">Dichloromethane (DCM)</option>
+          <option value="hexane">Hexane</option>
+          <option value="ipa" selected>IPA (Isopropanol)</option>
+          <option value="custom">Custom solvent</option>
+        </select>
+      </div>
+      <div id="customInputs" style="display:none;padding:.75rem;background:var(--color-background-secondary,#f5f5f5);border-radius:8px;margin-bottom:.5rem">
+        <div class="grid2" style="gap:8px">
+          <div><label>Market price ($/L)</label><input type="number" id="customPrice" value="5" onchange="recalc()" step="0.1"></div>
+          <div><label>Disposal cost ($/L)</label><input type="number" id="customDisposal" value="1.5" onchange="recalc()" step="0.1"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;font-size:12px;color:var(--color-text-secondary,#666);flex-wrap:wrap">
+        <span>BP: <strong id="bp">82</strong>°C</span>
+        <span>MW: <strong id="mw">60</strong> g/mol</span>
+        <span>Market: <strong id="mktPrice">$2.50</strong>/L</span>
+        <span>Disposal: <strong id="dispCost">$1.80</strong>/L</span>
+      </div>
+    </div>
+    <div>
+      <div class="input-group">
+        <label>Annual consumption: <strong id="volOut">2,000</strong> L/year</label>
+        <input type="range" id="volSlider" min="100" max="10000" step="100" value="2000" oninput="document.getElementById('volOut').textContent=Number(this.value).toLocaleString();recalc()">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary,#999)"><span>100 L</span><span>10,000 L</span></div>
+      </div>
+      <div class="input-group">
+        <label>Disposal method</label>
+        <select id="disposalMethod" onchange="recalc()">
+          <option value="incineration">Incineration (×1.3)</option>
+          <option value="landfill">Landfill (×0.9)</option>
+          <option value="contractor" selected>Waste contractor (×1.0)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="grid4" style="margin-top:.5rem">
+    <div class="metric-card"><div class="metric-label">Annual disposal cost</div><div class="metric-value red" id="annualDisposal">—</div></div>
+    <div class="metric-card"><div class="metric-label">Annual solvent value</div><div class="metric-value" id="annualValue">—</div></div>
+    <div class="metric-card"><div class="metric-label">Total annual waste cost</div><div class="metric-value amber" id="totalWaste">—</div></div>
+    <div class="metric-card"><div class="metric-label">Discount rate (%)</div><div class="metric-value"><input type="number" id="discRate" value="8" min="1" max="30" step="0.5" onchange="recalc()" style="width:64px;display:inline;padding:2px 4px;font-size:14px;font-weight:500"></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Capital cost estimation — user inputs</div>
+  <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:.75rem">Override auto-estimated capital costs per equipment option. Leave blank to use calculator defaults. FCI takes priority → PPC × 1.30 → PCE × 2.10 × 1.30.</div>
+  <div class="grid3" id="capCostInputs"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Operating cost estimation — user inputs</div>
+  <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:.75rem">Override auto-estimated annual operating costs. Leave blank to use calculator defaults.</div>
+  <div class="grid3" id="opCostInputs"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Recovery equipment comparison — select one to analyse</div>
+  <div class="grid3" id="equipCards"></div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">Sensitivity & scenario adjustments</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="whatif-btn" onclick="applyWhatIf(1.2)">Price +20% ↗</button>
+      <button class="whatif-btn" onclick="applyWhatIf(0.8)">Price −20%</button>
+      <button class="whatif-btn" onclick="resetWhatIf()">Reset</button>
+    </div>
+  </div>
+  <div class="grid2">
+    <div>
+      <label>Solvent price volatility: <strong id="priceVolOut">0%</strong></label>
+      <input type="range" id="priceVol" min="-20" max="20" step="1" value="0" oninput="document.getElementById('priceVolOut').textContent=(this.value>0?'+':'')+this.value+'%';recalc()">
+    </div>
+    <div>
+      <label>Equipment downtime: <strong id="downtimeOut">0%</strong></label>
+      <input type="range" id="downtime" min="0" max="15" step="1" value="0" oninput="document.getElementById('downtimeOut').textContent=this.value+'%';recalc()">
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <div class="section-title">ROI analysis — <span id="selectedEquipLabel">Option A: Distillation unit</span></div>
+  </div>
+  <div class="grid5" style="margin-bottom:1.25rem" id="roiMetrics"></div>
+
+  <!-- BREAKEVEN CHART -->
+  <div style="margin-bottom:1.5rem">
+    <div style="font-size:12px;font-weight:500;margin-bottom:.4rem">Breakeven analysis — cumulative net cash flow</div>
+    <div class="chart-legend" id="chartLegend"></div>
+    <div class="chart-wrap"><canvas id="roiChart"></canvas></div>
+  </div>
+
+  <!-- CASH FLOW TABLE -->
+  <div>
+    <div style="font-size:12px;font-weight:500;margin-bottom:.5rem">Cash flow table — build-up (Yr −3 to 0) and operations (Yr 1–20)</div>
+    <div style="overflow-x:auto">
+      <table class="cf-table" id="cfTable">
+        <thead><tr>
+          <th style="text-align:left">Year</th>
+          <th>Phase</th>
+          <th>Capex outflow</th>
+          <th>Recovery value</th>
+          <th>Fixed op. cost</th>
+          <th>Variable op. cost</th>
+          <th>Net annual</th>
+          <th>Cumulative NCF</th>
+          <th>Disc. factor</th>
+          <th>Disc. cash flow</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="disclaimer">Results are estimates only. PCE/PPC/FCI inputs override defaults when provided. Build-up capex is distributed across Years −3 to 0 (Year −3: 20%, Year −2: 50%, Year −1: 30%). Consult equipment vendors and cost engineers for validated figures.</div>
+
+<script>
+let curSymbol='$',curFX=1,whatIfMult=1,selectedEquip=0,roiChartInst=null;
+
+const SOLVENTS={
+  acetone:{bp:56,mw:58,price:2.20,disposal:1.60},
+  ethanol:{bp:78,mw:46,price:1.80,disposal:1.40},
+  toluene:{bp:111,mw:92,price:3.50,disposal:2.20},
+  methanol:{bp:65,mw:32,price:1.50,disposal:1.30},
+  dcm:{bp:40,mw:85,price:5.80,disposal:3.50},
+  hexane:{bp:69,mw:86,price:3.20,disposal:2.00},
+  ipa:{bp:82,mw:60,price:2.50,disposal:1.80},
+  custom:{bp:80,mw:80,price:5.00,disposal:1.50}
+};
+const EQUIP=[
+  {name:'Distillation unit',type:'A',capLow:50000,capHigh:150000,opLow:0.12,opHigh:0.18,effLow:0.92,effHigh:0.96,setupLow:3,setupHigh:6,maint:8,setupUnit:'months'},
+  {name:'Activated carbon adsorption',type:'B',capLow:15000,capHigh:40000,opLow:0.08,opHigh:0.14,effLow:0.85,effHigh:0.90,setupLow:1,setupHigh:2,maint:4,setupUnit:'months'},
+  {name:'Membrane separation',type:'C',capLow:80000,capHigh:200000,opLow:0.15,opHigh:0.22,effLow:0.94,effHigh:0.98,setupLow:4,setupHigh:8,maint:6,setupUnit:'weeks'}
+];
+const DISPOSAL_MULT={incineration:1.3,landfill:0.9,contractor:1.0};
+const HORIZON=20;
+const CAPEX_DIST=[0.20,0.50,0.30]; // Yr-3, Yr-2, Yr-1
+const CHART_COLORS=['#185FA5','#3B6D11','#854F0B'];
+
+function setCurrency(code,sym,fx,btn){
+  curSymbol=sym;curFX=fx;
+  document.querySelectorAll('.currency-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');recalc();
+}
+function fmt(v){
+  const c=v*curFX;
+  if(Math.abs(c)>=1e6)return curSymbol+(c<0?'':'')+((c/1e6).toFixed(2))+'M';
+  if(Math.abs(c)>=1e3)return (c<0?'-':'')+curSymbol+Math.abs(c/1000).toFixed(0)+'K';
+  return (c<0?'-':'')+curSymbol+Math.abs(Math.round(c)).toLocaleString();
+}
+function fmtAxis(v){
+  const c=v*curFX;
+  if(Math.abs(c)>=1e6)return(c<0?'-':'')+curSymbol+(Math.abs(c)/1e6).toFixed(1)+'M';
+  if(Math.abs(c)>=1e3)return(c<0?'-':'')+curSymbol+(Math.abs(c)/1000).toFixed(0)+'K';
+  return(c<0?'-':'')+curSymbol+Math.abs(Math.round(c));
+}
+function paybackColor(yrs){return yrs<2?'green':yrs<3?'amber':'red'}
+function getNum(id){const v=parseFloat(document.getElementById(id)?.value);return(isNaN(v)||v<=0)?null:v;}
+
+function getSolvent(){
+  const k=document.getElementById('solventSelect').value;
+  if(k==='custom') return{bp:80,mw:80,price:parseFloat(document.getElementById('customPrice').value)||5,disposal:parseFloat(document.getElementById('customDisposal').value)||1.5};
+  return SOLVENTS[k];
+}
+function updateSolvent(){
+  const s=getSolvent();
+  document.getElementById('bp').textContent=s.bp;
+  document.getElementById('mw').textContent=s.mw;
+  document.getElementById('mktPrice').textContent='$'+s.price.toFixed(2);
+  document.getElementById('dispCost').textContent='$'+s.disposal.toFixed(2);
+  document.getElementById('customInputs').style.display=document.getElementById('solventSelect').value==='custom'?'block':'none';
+  recalc();
+}
+function applyPreset(vol){document.getElementById('volSlider').value=vol;document.getElementById('volOut').textContent=vol.toLocaleString();recalc();}
+function applyWhatIf(m){whatIfMult=m;const pct=Math.round((m-1)*100);document.getElementById('priceVol').value=pct;document.getElementById('priceVolOut').textContent=(pct>0?'+':'')+pct+'%';recalc();}
+function resetWhatIf(){whatIfMult=1;document.getElementById('priceVol').value=0;document.getElementById('priceVolOut').textContent='0%';recalc();}
+
+function capDefault(i,vol){const e=EQUIP[i],t=vol/1000;return e.capLow+(e.capHigh-e.capLow)*Math.min(1,t/5);}
+function getCapital(i,vol){
+  const fci=getNum(`fci_${i}`),ppc=getNum(`ppc_${i}`),pce=getNum(`pce_${i}`);
+  if(fci)return fci;if(ppc)return ppc*1.30;if(pce)return pce*2.10*1.30;
+  return capDefault(i,vol);
+}
+function getOpCosts(i,vol,price){
+  const e=EQUIP[i];
+  const downtime=parseFloat(document.getElementById('downtime').value)/100;
+  const eff=(e.effLow+e.effHigh)/2*(1-downtime);
+  const opRate=(e.opLow+e.opHigh)/2;
+  const rec=vol*eff;
+  const dMaint=8*e.maint*12*1.10,dLabour=8*e.maint*12,dOverhead=dLabour*0.6,dUtil=rec*opRate*0.5,dRaw=rec*opRate*0.5;
+  const overhead=getNum(`overhead_${i}`)??dOverhead;
+  const labour=getNum(`labour_${i}`)??dLabour;
+  const maint=getNum(`maint_cost_${i}`)??dMaint;
+  const utility=getNum(`utility_${i}`)??dUtil;
+  const rawmat=getNum(`rawmat_${i}`)??dRaw;
+  return{fixedTotal:overhead+labour+maint,varTotal:utility+rawmat,totalOp:overhead+labour+maint+utility+rawmat,eff,recovered:rec};
+}
+function calcEquip(i,vol,price){
+  const cap=getCapital(i,vol);
+  const {fixedTotal,varTotal,totalOp,eff,recovered}=getOpCosts(i,vol,price);
+  const annualRecovery=recovered*price;
+  const annualNet=annualRecovery-totalOp;
+  const paybackYrs=annualNet>0?cap/annualNet:999;
+  return{cap,recovered,annualRecovery,fixedTotal,varTotal,totalOp,annualNet,paybackYrs,paybackMo:paybackYrs*12,eff};
+}
+function estimateIRR(annualNet,cap,yrs){
+  let lo=-0.99,hi=10;
+  for(let i=0;i<80;i++){const m=(lo+hi)/2;let n=-cap;for(let y=1;y<=yrs;y++)n+=annualNet/Math.pow(1+m,y);if(n>0)lo=m;else hi=m;}
+  return(lo+hi)/2*100;
+}
+
+function buildCapInputs(){
+  document.getElementById('capCostInputs').innerHTML=EQUIP.map((e,i)=>`
+    <div class="cost-section">
+      <div class="cost-section-title">Option ${e.type}: ${e.name}</div>
+      <div class="input-group"><div class="sub-label">Purchased cost of equipment — PCE ($)</div>
+        <input type="number" id="pce_${i}" placeholder="Auto (${Math.round(capDefault(i,2000)*0.4).toLocaleString()})" onchange="recalc()" min="0" step="1000"></div>
+      <div class="input-group"><div class="sub-label">Physical plant cost — PPC ($) <span style="font-size:10px;color:var(--color-text-tertiary)">(PCE × 2.10 if blank)</span></div>
+        <input type="number" id="ppc_${i}" placeholder="Auto" onchange="recalc()" min="0" step="1000"></div>
+      <div class="input-group"><div class="sub-label">Fixed capital investment — FCI ($) <span style="font-size:10px;color:var(--color-text-tertiary)">(PPC × 1.30 if blank)</span></div>
+        <input type="number" id="fci_${i}" placeholder="Auto" onchange="recalc()" min="0" step="1000"></div>
+    </div>`).join('');
+}
+function buildOpInputs(){
+  document.getElementById('opCostInputs').innerHTML=EQUIP.map((e,i)=>`
+    <div class="cost-section">
+      <div class="cost-section-title">Option ${e.type}: ${e.name}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666);margin-bottom:.4rem;font-weight:500">Fixed costs ($/yr)</div>
+      <div class="input-group"><div class="sub-label">Plant overheads</div><input type="number" id="overhead_${i}" placeholder="Auto" onchange="recalc()" min="0" step="100"></div>
+      <div class="input-group"><div class="sub-label">Labour charges</div><input type="number" id="labour_${i}" placeholder="Auto" onchange="recalc()" min="0" step="100"></div>
+      <div class="input-group"><div class="sub-label">Maintenance</div><input type="number" id="maint_cost_${i}" placeholder="Auto" onchange="recalc()" min="0" step="100"></div>
+      <div style="font-size:11px;color:var(--color-text-secondary,#666);margin:.5rem 0 .4rem;font-weight:500">Variable costs ($/yr)</div>
+      <div class="input-group"><div class="sub-label">Utility costs</div><input type="number" id="utility_${i}" placeholder="Auto" onchange="recalc()" min="0" step="100"></div>
+      <div class="input-group"><div class="sub-label">Raw materials / consumables</div><input type="number" id="rawmat_${i}" placeholder="Auto" onchange="recalc()" min="0" step="100"></div>
+    </div>`).join('');
+}
+
+function renderEquipCards(){
+  const sol=getSolvent(),vol=parseFloat(document.getElementById('volSlider').value);
+  const priceAdj=(1+parseFloat(document.getElementById('priceVol').value)/100)*whatIfMult;
+  const price=sol.price*priceAdj;
+  document.getElementById('equipCards').innerHTML=EQUIP.map((e,i)=>{
+    const r=calcEquip(i,vol,price);
+    const col=paybackColor(r.paybackYrs);
+    return`<div class="equip-card${i===selectedEquip?' active':''}" onclick="selectEquip(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div class="equip-name">Option ${e.type}: ${e.name}</div>
+        <span class="badge ${col}">${col==='green'?'Low risk':col==='amber'?'Medium':'Higher risk'}</span>
+      </div>
+      <div class="equip-stat"><span>Capital (FCI)</span><strong>${fmt(r.cap)}</strong></div>
+      <div class="equip-stat"><span>Recovery efficiency</span><strong>${(r.eff*100).toFixed(1)}%</strong></div>
+      <div class="equip-stat"><span>Fixed op. cost/yr</span><span>${fmt(r.fixedTotal)}</span></div>
+      <div class="equip-stat"><span>Variable op. cost/yr</span><span>${fmt(r.varTotal)}</span></div>
+      <div class="equip-stat"><span>Setup</span><span>${e.setupLow}–${e.setupHigh} ${e.setupUnit}</span></div>
+      <div style="border-top:.5px solid var(--color-border-tertiary,rgba(0,0,0,.1));margin-top:8px;padding-top:8px">
+        <div style="font-size:11px;color:var(--color-text-secondary,#666)">Simple payback period</div>
+        <div class="payback-big" style="color:${col==='green'?'#3B6D11':col==='amber'?'#854F0B':'#A32D2D'}">${r.paybackYrs>50?'N/A':r.paybackMo.toFixed(1)+' mo'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function selectEquip(i){selectedEquip=i;document.getElementById('selectedEquipLabel').textContent=`Option ${EQUIP[i].type}: ${EQUIP[i].name}`;renderEquipCards();renderAnalysis();}
+
+function renderAnalysis(){
+  const sol=getSolvent(),vol=parseFloat(document.getElementById('volSlider').value);
+  const dispMult=DISPOSAL_MULT[document.getElementById('disposalMethod').value];
+  const DR=parseFloat(document.getElementById('discRate').value)/100||0.08;
+  const priceAdj=(1+parseFloat(document.getElementById('priceVol').value)/100)*whatIfMult;
+  const price=sol.price*priceAdj;
+  const r=calcEquip(selectedEquip,vol,price);
+
+  // Build timeline: Yr-3, Yr-2, Yr-1 (build-up) + Yr0 (commissioning) + Yr1..20 (ops)
+  // Capex distributed: -3: 20%, -2: 50%, -1: 30%
+  const opYears=Array.from({length:HORIZON},(_,i)=>i+1);
+  const buildYears=[-3,-2,-1,0];
+  const allYears=[...buildYears,...opYears];
+
+  // Per-equip cumulative for chart (all 3)
+  function equipCumSeries(ei){
+    const ri=calcEquip(ei,vol,price);
+    const cap=getCapital(ei,vol);
+    let cum=0;const pts=[];
+    buildYears.forEach((yr,bi)=>{
+      const capex=bi<3?cap*CAPEX_DIST[bi]:0;
+      cum-=capex;pts.push(cum);
+    });
+    opYears.forEach(()=>{cum+=ri.annualNet;pts.push(cum);});
+    return pts;
+  }
+
+  const allSeries=EQUIP.map((_,ei)=>equipCumSeries(ei));
+  const selSeries=allSeries[selectedEquip];
+
+  // Find breakeven index (first point where cum >= 0 during ops)
+  let breakevenIdx=null,breakevenYr=null;
+  for(let i=buildYears.length;i<selSeries.length;i++){
+    if(selSeries[i]>=0&&(i===0||selSeries[i-1]<0)){breakevenIdx=i;breakevenYr=allYears[i];break;}
+  }
+
+  // Cash flow table data
+  let cum=0,npv=0,totalRecovery=0,totalOp=0;
+  const tbody=document.querySelector('#cfTable tbody');
+  tbody.innerHTML='';
+
+  allYears.forEach((yr,idx)=>{
+    const isBuild=yr<=0;
+    const bi=buildYears.indexOf(yr);
+    const capex=bi>=0&&bi<3?r.cap*CAPEX_DIST[bi]:0;
+    const recVal=isBuild?0:r.annualRecovery;
+    const fixedOp=isBuild?0:r.fixedTotal;
+    const varOp=isBuild?0:r.varTotal;
+    const net=recVal-fixedOp-varOp-capex;
+    const df=yr<=0?1:1/Math.pow(1+DR,yr);
+    npv+=net*df;
+    if(!isBuild){totalRecovery+=recVal;totalOp+=r.totalOp;}
+    cum+=net;
+    const isPB=!isBuild&&breakevenYr===yr;
+    const tr=document.createElement('tr');
+    tr.className=(isBuild?'buildup':(cum>=0?'positive':'negative'))+(isPB?' payback-row':'');
+    tr.innerHTML=`<td>${yr<=0?'Yr '+yr:'Yr '+yr}${isPB?' ★':''}</td>
+      <td style="color:var(--color-text-secondary,#666)">${isBuild?'Build-up':'Operations'}</td>
+      <td>${capex>0?fmt(-capex):'—'}</td>
+      <td>${isBuild?'—':fmt(recVal)}</td>
+      <td>${isBuild?'—':fmt(fixedOp)}</td>
+      <td>${isBuild?'—':fmt(varOp)}</td>
+      <td>${fmt(net)}</td>
+      <td class="cum">${fmt(cum)}</td>
+      <td>${df.toFixed(4)}</td>
+      <td>${fmt(net*df)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const roi20=(totalRecovery-totalOp-r.cap)/r.cap*100;
+  const ror=r.annualNet/r.cap*100;
+  const irr=estimateIRR(r.annualNet,r.cap,HORIZON);
+
+  document.getElementById('roiMetrics').innerHTML=`
+    <div class="metric-card"><div class="metric-label">20-yr recovery value</div><div class="metric-value">${fmt(totalRecovery)}</div></div>
+    <div class="metric-card"><div class="metric-label">Net present worth (yr 20)</div><div class="metric-value ${npv>0?'green':'red'}">${fmt(npv)}</div></div>
+    <div class="metric-card"><div class="metric-label">Rate of return</div><div class="metric-value ${ror>DR*100?'green':ror>0?'amber':'red'}">${ror.toFixed(1)}%/yr</div></div>
+    <div class="metric-card"><div class="metric-label">IRR (20-yr)</div><div class="metric-value ${irr>DR*100?'green':irr>0?'amber':'red'}">${irr.toFixed(1)}%</div></div>
+    <div class="metric-card"><div class="metric-label">Breakeven point</div><div class="metric-value ${paybackColor(r.paybackYrs)}">${breakevenYr!==null?'Yr '+breakevenYr:'> 20 yr'}</div></div>`;
+
+  // Chart x-labels
+  const xLabels=allYears.map(y=>y<=0?'Yr '+y:'Yr '+y);
+
+  // Breakeven annotation line data (vertical line at breakeven index as null-filled dataset)
+  const beLineData=xLabels.map(()=>null);
+  let beMin=Infinity,beMax=-Infinity;
+  selSeries.forEach(v=>{if(v<beMin)beMin=v;if(v>beMax)beMax=v;});
+  const yPad=(beMax-beMin)*0.08;
+
+  // Legend HTML
+  const legendItems=[
+    ...EQUIP.map((e,i)=>`<span class="legend-item"><span class="legend-swatch" style="background:${CHART_COLORS[i]};${i!==selectedEquip?'opacity:.45':''}"></span>Opt ${e.type}: ${e.name}${i===selectedEquip?' (selected)':''}</span>`),
+    `<span class="legend-item"><span class="legend-swatch" style="background:transparent;border-top:2px dashed #E24B4A;height:0;margin-top:2px"></span>Breakeven point</span>`,
+    `<span class="legend-item"><span class="legend-swatch" style="background:rgba(0,0,0,.25)"></span>Zero line</span>`
+  ];
+  document.getElementById('chartLegend').innerHTML=legendItems.join('');
+
+  if(roiChartInst)roiChartInst.destroy();
+
+  // Build breakeven vertical annotation as two points
+  const beData=xLabels.map(()=>null);
+  const beDataLow=xLabels.map(()=>null);
+  if(breakevenIdx!==null){
+    beData[breakevenIdx]=(beMax+yPad)*curFX;
+    beDataLow[breakevenIdx]=(beMin-yPad)*curFX;
+  }
+
+  roiChartInst=new Chart(document.getElementById('roiChart'),{
+    type:'line',
+    data:{
+      labels:xLabels,
+      datasets:[
+        ...EQUIP.map((e,i)=>({
+          label:`Option ${e.type}: ${e.name}`,
+          data:allSeries[i].map(v=>Math.round(v*curFX)),
+          borderColor:i===selectedEquip?CHART_COLORS[i]:CHART_COLORS[i]+'55',
+          borderWidth:i===selectedEquip?2.5:1.2,
+          borderDash:i===selectedEquip?[]:[5,5],
+          pointRadius:i===selectedEquip?2:0,
+          pointHoverRadius:4,
+          fill:false,tension:.3,
+          yAxisID:'y'
+        })),
+        {
+          label:'Zero / break-even line',
+          data:xLabels.map(()=>0),
+          borderColor:'rgba(0,0,0,.25)',borderWidth:1,borderDash:[3,4],
+          pointRadius:0,fill:false,yAxisID:'y'
+        },
+        ...(breakevenIdx!==null?[{
+          label:'Breakeven year',
+          data:xLabels.map((_,i)=>i===breakevenIdx?Math.round((beMax+yPad)*curFX):null),
+          borderColor:'#E24B4A',borderWidth:0,
+          pointRadius:xLabels.map((_,i)=>i===breakevenIdx?6:0),
+          pointStyle:'triangle',
+          pointBackgroundColor:'#E24B4A',
+          fill:false,showLine:false,yAxisID:'y'
+        }]:[])
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            title:items=>'Year: '+items[0].label,
+            label:item=>item.dataset.label+': '+fmtAxis(item.parsed.y/curFX)
+          }
+        }
+      },
+      scales:{
+        x:{
+          title:{display:true,text:'Project year',font:{size:11},color:'var(--color-text-secondary,#666)'},
+          grid:{color:'rgba(0,0,0,.05)'},
+          ticks:{font:{size:10},maxTicksLimit:13},
+          border:{dash:[2,4]}
+        },
+        y:{
+          title:{display:true,text:`Cumulative net cash flow (${curSymbol})`,font:{size:11},color:'var(--color-text-secondary,#666)'},
+          grid:{color:'rgba(0,0,0,.05)'},
+          ticks:{font:{size:10},callback:v=>fmtAxis(v/curFX)},
+          border:{dash:[2,4]}
+        }
+      }
+    },
+    plugins:[{
+      id:'breakevenLine',
+      afterDraw(chart){
+        if(breakevenIdx===null)return;
+        const{ctx,chartArea,scales}=chart;
+        const x=scales.x.getPixelForValue(breakevenIdx);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x,chartArea.top);
+        ctx.lineTo(x,chartArea.bottom);
+        ctx.strokeStyle='#E24B4A';
+        ctx.lineWidth=1.5;
+        ctx.setLineDash([4,4]);
+        ctx.stroke();
+        ctx.fillStyle='#E24B4A';
+        ctx.font='500 10px system-ui,sans-serif';
+        ctx.fillText('Breakeven: '+xLabels[breakevenIdx],x+4,chartArea.top+14);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+function recalc(){
+  const sol=getSolvent(),vol=parseFloat(document.getElementById('volSlider').value);
+  const dispMult=DISPOSAL_MULT[document.getElementById('disposalMethod').value];
+  const priceAdj=(1+parseFloat(document.getElementById('priceVol').value)/100)*whatIfMult;
+  const price=sol.price*priceAdj;
+  document.getElementById('annualDisposal').textContent=fmt(vol*sol.disposal*dispMult);
+  document.getElementById('annualValue').textContent=fmt(vol*price);
+  document.getElementById('totalWaste').textContent=fmt(vol*sol.disposal*dispMult+vol*price);
+  renderEquipCards();
+  renderAnalysis();
+}
+
+buildCapInputs();buildOpInputs();updateSolvent();
+</script>
+</body>
+</html>
